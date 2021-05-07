@@ -212,7 +212,11 @@ This will be used as the text body in the release.
 OPTIONAL:
 Add to the CHANGELOG.md
 ```
-Issues
+# New Features
+
+# Issues
+
+# Documentation
 
 ```
 
@@ -228,25 +232,34 @@ jobs:
     name: issue worker
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@develop
-      - name: closed
-        if: ${{ github.event_name == 'issues' && github.event.action == 'closed' }}
+      - uses: actions/checkout@v2
+        with:
+          ref: 'develop'
+      - name: closed bug
+        if: ${{ github.event_name == 'issues' && github.event.action == 'closed'  &&  contains(github.event.issue.labels.*.name, 'bug') && !contains(github.event.issue.labels.*.name, 'wontfix') && !contains(github.event.issue.labels.*.name, 'invalid') }}
         shell: bash
-        run: perl -p -i -e "s/Issues\n/Issues\n\n- ${{ github.event.issue.number }} - ${{ github.event.issue.title }} \n/"  CHANGELOG.md
-   
+        run: perl -p -i -e "s/Issues\n/Issues\n\n\* \#${{ github.event.issue.number }} - ${{ github.event.issue.title }} /"  CHANGELOG.md
+      - name: closed documentation issue
+        if: ${{ github.event_name == 'issues' && github.event.action == 'closed'  && contains(github.event.issue.labels.*.name, 'documentation') && !contains(github.event.issue.labels.*.name, 'wontfix') && !contains(github.event.issue.labels.*.name, 'invalid') }}
+        shell: bash
+        run: perl -p -i -e "s/New Features\n/New Features\n\n\* \#${{ github.event.issue.number }} - ${{ github.event.issue.title }} /"  CHANGELOG.md
+      - name: closed feature
+        if: ${{ github.event_name == 'issues' && github.event.action == 'closed'  && contains(github.event.issue.labels.*.name, 'enhancement') && !contains(github.event.issue.labels.*.name, 'wontfix') && !contains(github.event.issue.labels.*.name, 'invalid') }}
+        shell: bash
+        run: perl -p -i -e "s/Documentation\n/Documentation\n\n\* \#${{ github.event.issue.number }} - ${{ github.event.issue.title }} /"  CHANGELOG.md
       - name: reopend
         shell: bash
-        if: ${{ github.event_name == 'issues' && github.event.action == 'reopened' }}
-        run: perl -p -i -e "s/- ${{ github.event.issue.number }} - ${{ github.event.issue.title }} \n//" CHANGELOG.md
+        if: ${{ github.event_name == 'issues' && github.event.action == 'reopened'   && ( contains(github.event.issue.labels.*.name, 'bug') || contains(github.event.issue.labels.*.name, 'documentation') || contains(github.event.issue.labels.*.name, 'enhancement')) }}
+        run: perl -p -i -e "s/\* \#${{ github.event.issue.number }} - [^\n]*\n//" CHANGELOG.md
       - uses: EndBug/add-and-commit@v7 # You can change this to use a specific version
         with:
           add: 'CHANGELOG.md'
           branch: develop
 ```
 
-This workflow will automatically add closed Issues to the CHANGELOG file and remove them if the issues is reopend. 
-Adjustment is needed (workflow should be easily extendable to that) if the issue is renamed. 
-Additional it can be set to add bugs to an `Issue` section and enhancements to an `Added Features` section.
+This workflow will add Issues wich are labeled as bug, documentation or enhancement to the corresponding List in the CHANGELOG.md
+and thus the changelog never has to be touched manually. 
+It will be commited to develop, which would mostly support a workflow where an Issues is closed only if the feature/bug fix is already merged into `develop`.
 
 
 ## Continous Integration Workflow
