@@ -31,11 +31,12 @@ If you don't have a mkdocs documentation create one in  your project
 mkdocs new . 
 ```
 
-edit mkdocs.yml and exchange everything starting with YOUR. (Note the $VERSION will be automatically exchange later on) 
+edit mkdocs.yml and exchange everything starting with YOUR. (Note the $VERSION and $RELEASE_VERSION will be automatically exchange later on) 
 
 ```yaml
 extra:
   version: $VERSION
+  release_version: $RELEASE_VERSION
   social:
     - icon: fontawesome/brands/github
       link: YOUR_GITHUB_LINK
@@ -245,6 +246,7 @@ jobs:
       - run: pip install mkdocs-material
       - run: pip install mkdocs-macros-plugin
       - run: sed -i "s/\$VERSION/$(cat version.log)/g" mkdocs.yml
+      - run: sed -i "s/\$RELEASE_VERSION/${{ RELEASE_VERSION }}/g" mkdocs.yml 
       - run: mkdocs build -d site/$(cat version.log)
       - run: mvn javadoc:javadoc
       - run: sed -i "s/\$VERSION/$(cat version.log)/g" index.html
