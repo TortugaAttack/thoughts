@@ -169,6 +169,41 @@ add index.html to your repo with the following content.
 
 ```
 
+## Adding GitHub check to assure that version doesn't exist yet
+
+Add a script to `.github/scripts/tagexists.sh` and `chmod +x .github/scripts/tagexists.sh`
+Add the following: 
+
+```bash
+#!/bin/sh
+
+if git rev-parse "$1" >/dev/null 2>&1; then
+  echo "exists"
+  exit 1
+else
+  echo "$1 does not exists"
+  exit 0
+fi
+
+
+```
+
+Now create the check by creating a file at `.github/workflows/lint.yml`
+
+```yml
+name: lint
+on: pull_request
+
+jobs:
+  lint:
+    name: Release Tag existence Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@main
+      - run: .github/scripts/tagcheck.sh v$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+```
+
+This should assure that the PR won't happen until the version is properly set new.
 
 ## Continous Integration Workflow
 
