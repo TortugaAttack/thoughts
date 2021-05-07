@@ -269,7 +269,7 @@ jobs:
           release_name: Version ${{ RELEASE_VERSION }}
           draft: false
           prerelease: false
-          body_path: CHANGELOG
+          body_path: CHANGELOG.md
       - uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
