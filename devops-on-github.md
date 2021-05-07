@@ -209,6 +209,46 @@ This should assure that the PR won't happen until the version is properly set ne
 Create a file called CHANGELOG.md and write all changes since the last version in there. 
 This will be used as the text body in the release.
 
+OPTIONAL:
+Add to the CHANGELOG.md
+```
+Issues
+
+```
+
+and setup the following workflow at `.github/workflows/issues.yml`
+
+```yaml
+on:
+  issues:
+    types: [closed, reopened]
+
+jobs:
+  test:
+    name: issue worker
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@develop
+      - name: closed
+        if: ${{ github.event_name == 'issues' && github.event.action == 'closed' }}
+        shell: bash
+        run: perl -p -i -e "s/Issues\n/Issues\n\n- ${{ github.event.issue.number }} - ${{ github.event.issue.title }} \n/"  CHANGELOG.md
+   
+      - name: reopend
+        shell: bash
+        if: ${{ github.event_name == 'issues' && github.event.action == 'reopened' }}
+        run: perl -p -i -e "s/- ${{ github.event.issue.number }} - ${{ github.event.issue.title }} \n//" CHANGELOG.md
+      - uses: EndBug/add-and-commit@v7 # You can change this to use a specific version
+        with:
+          add: 'CHANGELOG.md'
+          branch: develop
+```
+
+This workflow will automatically add closed Issues to the CHANGELOG file and remove them if the issues is reopend. 
+Adjustment is needed (workflow should be easily extendable to that) if the issue is renamed. 
+Additional it can be set to add bugs to an `Issue` section and enhancements to an `Added Features` section.
+
+
 ## Continous Integration Workflow
 
 create a file called ci.yml in .github/workflows/ 
