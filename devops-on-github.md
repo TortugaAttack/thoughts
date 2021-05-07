@@ -260,8 +260,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ RELEASE_VERSION }}
-          release_name: ${{ RELEASE_VERSION }}
+          tag_name: v${{ RELEASE_VERSION }}
+          release_name: v${{ RELEASE_VERSION }}
           draft: false
           prerelease: false
       - uses: actions/upload-release-asset@v1.0.1
