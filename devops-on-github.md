@@ -202,7 +202,7 @@ jobs:
         run: mvn --batch-mode deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Create Draft Release
+      - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
@@ -227,7 +227,7 @@ This will automatically get the artifactID and version from the pom .xml
 then will exchange $VERSION in  mkdocs and create the documentations (in this version allows material a very nice theme for mkdocs).
 Further on creates the javadoc for the maven project. Both will be published to the gh-pages branch.
 
-Afterwards the package will be deployed to github packages and a release with the version set in the pom.xml will be released including the final shaded jar.(TODO)   
+Afterwards the package will be deployed to github packages and a release with the version set in the pom.xml will be released including the final shaded jar.
 
 And thats it. 
 As soon as you PR into main it will create and version the documentation as well as javadoc into $VERSION/ and javadoc/$VERSION/apidocs and creates a fully release and publishing a maven package.
