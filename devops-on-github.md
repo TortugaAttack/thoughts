@@ -81,6 +81,8 @@ plugins:
 
 ```
 
+Everywhere in your documentation where you want to use the version simply use `{{ version }}` it will be exchanged with the version in your pom at deployment.
+
 Now you'll get a nice and beautiful documentation using mkdocs-material and you just need to create your documentation (see. https://www.mkdocs.org/)
 
 ## setting up the pom.xml
