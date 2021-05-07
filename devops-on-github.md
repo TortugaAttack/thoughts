@@ -205,6 +205,11 @@ jobs:
 
 This should assure that the PR won't happen until the version is properly set new.
 
+## Create CHANGELOG.md for release body
+
+Create a file called CHANGELOG.md and write all changes since the last version in there. 
+This will be used as the text body in the release.
+
 ## Continous Integration Workflow
 
 create a file called ci.yml in .github/workflows/ 
@@ -261,9 +266,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ RELEASE_VERSION }}
-          release_name: v${{ RELEASE_VERSION }}
+          release_name: Version ${{ RELEASE_VERSION }}
           draft: false
           prerelease: false
+          body_path: CHANGELOG
       - uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
