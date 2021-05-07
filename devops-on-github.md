@@ -5,7 +5,8 @@ The website will then contain the following assuming the version in your pom is 
 * https://YOUR_GROUP.github.io/YOUR_PROJECT_NAME/MAJOR_MINOR_VERSION_IN_POM/ - the documentation 
 * https://YOUR_GROUP.github.io/YOUR_PROJECT_NAME/javadoc/MAJOR_MINOR_VERSION_IN_POM/apidocs - the javadoc
 
-Be aware that this uses the versioning major.minor.build and only updates the javadoc and documentation if a major or minor update will happen, as a build version should generally not change the documentation.
+Be aware that this uses the versioning major.minor.build and updates the javadoc and documentation if a major or minor update will happen, as a build version should generally not change the documentation.
+Be aware that even if you just release a build update the javadoc and documentation will be overwritten, allowing minor changes such as correcting words/grammar.
 
 ## Restricting main 
 
