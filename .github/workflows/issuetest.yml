@@ -11,19 +11,19 @@ jobs:
       - name: closed bug
         if: ${{ github.event_name == 'issues' && github.event.action == 'closed'  &&  contains(github.event.issue.labels.*.name, 'bug') && !contains(github.event.issue.labels.*.name, 'wontfix') && !contains(github.event.issue.labels.*.name, 'invalid') }}
         shell: bash
-        run: perl -p -i -e "s/Issues\n/Issues\n\n- \#${{ github.event.issue.number }} - ${{ github.event.issue.title }} /"  CHANGELOG.md
+        run: perl -p -i -e "s/Issues\n/Issues\n\n\* \#${{ github.event.issue.number }} - ${{ github.event.issue.title }} /"  CHANGELOG.md
       - name: closed documentation issue
         if: ${{ github.event_name == 'issues' && github.event.action == 'closed'  && contains(github.event.issue.labels.*.name, 'documentation') && !contains(github.event.issue.labels.*.name, 'wontfix') && !contains(github.event.issue.labels.*.name, 'invalid') }}
         shell: bash
-        run: perl -p -i -e "s/New Features\n/New Features\n\n- \#${{ github.event.issue.number }} - ${{ github.event.issue.title }} /"  CHANGELOG.md
+        run: perl -p -i -e "s/New Features\n/New Features\n\n\* \#${{ github.event.issue.number }} - ${{ github.event.issue.title }} /"  CHANGELOG.md
       - name: closed feature
         if: ${{ github.event_name == 'issues' && github.event.action == 'closed'  && contains(github.event.issue.labels.*.name, 'enhancement') && !contains(github.event.issue.labels.*.name, 'wontfix') && !contains(github.event.issue.labels.*.name, 'invalid') }}
         shell: bash
-        run: perl -p -i -e "s/Documentation\n/Documentation\n\n- \#${{ github.event.issue.number }} - ${{ github.event.issue.title }} /"  CHANGELOG.md
+        run: perl -p -i -e "s/Documentation\n/Documentation\n\n\* \#${{ github.event.issue.number }} - ${{ github.event.issue.title }} /"  CHANGELOG.md
       - name: reopend
         shell: bash
         if: ${{ github.event_name == 'issues' && github.event.action == 'reopened'   && ( contains(github.event.issue.labels.*.name, 'bug') || contains(github.event.issue.labels.*.name, 'documentation') || contains(github.event.issue.labels.*.name, 'enhancement')) }}
-        run: perl -p -i -e "s/- \#${{ github.event.issue.number }} - [^\n]*\n//" CHANGELOG.md
+        run: perl -p -i -e "s/\* \#${{ github.event.issue.number }} - [^\n]*\n//" CHANGELOG.md
       - uses: EndBug/add-and-commit@v7 # You can change this to use a specific version
         with:
           add: 'CHANGELOG.md'
