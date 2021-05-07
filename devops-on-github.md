@@ -1,10 +1,11 @@
 # CI using maven and mkdocs for documentation
 
 This will setup your github pages, creating automatically releases and publishes packages as soon as you merge into `main` 
-The website will then contain the following assuming the version in your pom is VERSION_IN_POM: 
-* https://YOUR_GROUP.github.io/YOUR_PROJECT_NAME/VERSION_IN_POM/ - the documentation 
-* https://YOUR_GROUP.github.io/YOUR_PROJECT_NAME/javadoc/VERSION_IN_POM/apidocs - the javadoc
+The website will then contain the following assuming the version in your pom is MAJOR_MINOR_VERSION_IN_POM: 
+* https://YOUR_GROUP.github.io/YOUR_PROJECT_NAME/MAJOR_MINOR_VERSION_IN_POM/ - the documentation 
+* https://YOUR_GROUP.github.io/YOUR_PROJECT_NAME/javadoc/MAJOR_MINOR_VERSION_IN_POM/apidocs - the javadoc
 
+Be aware that this uses the versioning major.minor.build and only updates the javadoc and documentation if a major or minor update will happen, as a build version should generally not change the documentation.
 
 ## Restricting main 
 
@@ -88,6 +89,19 @@ Now you'll get a nice and beautiful documentation using mkdocs-material and you 
 ## setting up the pom.xml
 
 ```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  ...
+  <version>${major.minor.version}.${build.version}</version>
+  <properties>
+        <major.minor.version>${major.version}.${minor.version}</major.minor.version>
+        <major.version>YOUR MAJOR VERSION</major.version>
+        <minor.version>YOUR MINOR VERSION</minor.version>
+        <build.version>YOUR BUILD VERSION</build.version>
+    ...
+  </properties>
+  
 ...
     <distributionManagement>
         <repository>
@@ -103,7 +117,7 @@ Now you'll get a nice and beautiful documentation using mkdocs-material and you 
        <groupId>org.apache.maven.plugins</groupId>
        <artifactId>maven-javadoc-plugin</artifactId>
        <configuration>
-          <reportOutputDirectory>site/javadoc/${project.version}/</reportOutputDirectory>
+          <reportOutputDirectory>site/javadoc/${major.minor.version}/</reportOutputDirectory>
        </configuration>
     </plugin>
    </plugins>
@@ -178,11 +192,11 @@ jobs:
         with:
           python-version: 3.x
       - shell: bash
-        run: mvn help:evaluate -Dexpression=project.version -q -DforceStdout > version.log
+        run: mvn help:evaluate -Dexpression=major.minor.version -q -DforceStdout > version.log
       - shell: bash
         run: mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout > artifactid.log
       - name: Set env version
-        run: echo "RELEASE_VERSION=$(cat version.log)" >> $GITHUB_ENV
+        run: echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
       - name: Set env name
         run: echo "RELEASE_ARTIFACTID=$(cat artifactid.log)" >> $GITHUB_ENV  
       - name: test
