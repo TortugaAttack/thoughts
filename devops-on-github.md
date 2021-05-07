@@ -1,0 +1,233 @@
+# Devops using maven and mkdocs for documentation
+
+This will setup your github pages, creating automatically releases and publishes packages as soon as you merge into `main` 
+The website will then contain the following assuming the version in your pom is VERSION_IN_POM: 
+* https://YOUR_GROUP.github.io/YOUR_PROJECT_NAME/VERSION_IN_POM/ - the documentation 
+* https://YOUR_GROUP.github.io/YOUR_PROJECT_NAME/javadoc/VERSION_IN_POM/apidocs - the javadoc
+
+
+## Restricting main 
+
+In your project go to settings->Branches and add a Branch protection rule for your main branch (this will be the release branch)
+Set 
+* Require pull request reviews before merging
+* Require status checks to pass before merging 
+* Include administrators 
+
+This will restrict from accidentally pushing directly to the main branch, which would accidentally releasing.
+
+## Setting up Github Pages. 
+
+Create the `gh-pages` branch in your project
+
+In your project go to settings->Pages and set the Source to gh-pages. 
+
+## MKDocs 
+
+If you don't have a mkdocs documentation create one in  your project
+```
+mkdocs new . 
+```
+
+edit mkdocs.yml and exchange everything starting with YOUR. (Note the $VERSION will be automatically exchange later on) 
+
+```yaml
+extra:
+  version: $VERSION
+  social:
+    - icon: fontawesome/brands/github
+      link: YOUR_GITHUB_LINK
+
+site_name: YOUR_PROJECT_NAME 
+
+
+edit_uri: ""
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.top
+    - toc.integrate
+
+  include_search_page: false
+  search_index_only: true
+
+  language: en
+  font:
+    text: Roboto
+    code: Roboto Mono
+  favicon: assets/favicon.png
+  icon:
+    logo: logo
+    repo: fontawesome/brands/git-alt
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/toggle-switch-off-outline
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/toggle-switch
+        name: Switch to light mode
+
+repo_url: YOUR_REPO_URL
+repo_name: YOUR_GROUP/YOUR_PROJECT_NAME
+
+plugins:
+  - macros
+  - search
+
+```
+
+Now you'll get a nice and beautiful documentation using mkdocs-material and you just need to create your documentation (see. https://www.mkdocs.org/)
+
+## setting up the pom.xml
+
+```xml
+...
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub Packages</name>
+            <url>https://maven.pkg.github.com/YOUR_GROUP/YOUR_PROJECT_NAME</url>
+        </repository>
+    </distributionManagement>
+...
+
+   <plugins>
+    <plugin>
+       <groupId>org.apache.maven.plugins</groupId>
+       <artifactId>maven-javadoc-plugin</artifactId>
+       <configuration>
+          <reportOutputDirectory>site/javadoc/${project.version}/</reportOutputDirectory>
+       </configuration>
+    </plugin>
+   </plugins>
+```
+
+This will setup the package managment using github and creating the javadoc and setting that to /javadoc/VERSION/apidocs 
+If you don't want the apidocs add `<dirDest></dirDest>` to the configuration as well.
+
+### Setting the shaded jar 
+
+Assuming you're using the maven shaded plugin 
+ensure that the shaded jar will not deploy as follows
+```xml
+<plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.2.1</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>shade</goal>
+                        </goals>
+                        <configuration>
+                            <shadedArtifactAttached>true</shadedArtifactAttached>
+                            <shadedClassifierName>shaded</shadedClassifierName>
+                            ...
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+```
+
+## Add index.html to redirect to the latest documentation 
+
+add index.html to your repo with the following content.
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="refresh" content="5; url='https://YOUR_GROUP.github.io/YOUR_PROJECT_NAME/$VERSION'" />
+  </head>
+  <body>
+  redirecting to newest documentation... Click <a href="https://YOUR_GROUP.github.io/YOUR_PROJECT_NAME/$VERSION" >here</a>  if nothing happens.
+  </body>
+</html>
+
+```
+
+
+## Continous Integration Workflow
+
+create a file called ci.yml in .github/workflows/ 
+```yaml
+name: ci
+on:
+  push:
+    branches:
+      - main
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up JDK 11
+        uses: actions/setup-java@v2
+        with:
+          java-version: '11'
+          distribution: 'adopt'
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
+      - shell: bash
+        run: mvn help:evaluate -Dexpression=project.version -q -DforceStdout > version.log
+      - shell: bash
+        run: mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout > artifactid.log
+      - name: Set env version
+        run: echo "RELEASE_VERSION=$(cat version.log)" >> $GITHUB_ENV
+      - name: Set env name
+        run: echo "RELEASE_ARTIFACTID=$(cat artifactid.log)" >> $GITHUB_ENV  
+      - name: test
+        run: echo ${{ RELEASE_VERSION }} ${{ RELEASE_ARTIFACTID }}
+      - run: pip install mkdocs-material
+      - run: pip install mkdocs-macros-plugin
+      - run: sed -i "s/\$VERSION/$(cat version.log)/g" mkdocs.yml
+      - run: mkdocs build -d site/$(cat version.log)
+      - run: mvn javadoc:javadoc
+      - run: sed -i "s/\$VERSION/$(cat version.log)/g" index.html
+      - run: cp index.html ./site
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          destination_dir: ./
+      - name: Publish package
+        run: mvn --batch-mode deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Draft Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ RELEASE_VERSION }}
+          release_name: ${{ RELEASE_VERSION }}
+          draft: false
+          prerelease: false
+        - uses: actions/upload-release-asset@v1.0.1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            upload_url: ${{ steps.create_release.outputs.upload_url }}
+            asset_path: ./target/${{ RELEASE_ARTIFACTID }}-${{ RELEASE_VERSION }}-shaded.jar
+            asset_name: ${{ RELEASE_ARTIFACTID }}-${{ RELEASE_VERSION }}.jar
+            asset_content_type: application/zip
+
+```
+
+This will automatically get the artifactID and version from the pom .xml 
+then will exchange $VERSION in  mkdocs and create the documentations (in this version allows material a very nice theme for mkdocs).
+Further on creates the javadoc for the maven project. Both will be published to the gh-pages branch.
+
+Afterwards the package will be deployed to github packages and a release with the version set in the pom.xml will be released including the final shaded jar.(TODO)   
+
+And thats it. 
+As soon as you PR into main it will create and version the documentation as well as javadoc into $VERSION/ and javadoc/$VERSION/apidocs and creates a fully release and publishing a maven package.
