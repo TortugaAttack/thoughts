@@ -212,14 +212,14 @@ jobs:
           release_name: ${{ RELEASE_VERSION }}
           draft: false
           prerelease: false
-        - uses: actions/upload-release-asset@v1.0.1
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          with:
-            upload_url: ${{ steps.create_release.outputs.upload_url }}
-            asset_path: ./target/${{ RELEASE_ARTIFACTID }}-${{ RELEASE_VERSION }}-shaded.jar
-            asset_name: ${{ RELEASE_ARTIFACTID }}-${{ RELEASE_VERSION }}.jar
-            asset_content_type: application/zip
+      - uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./target/${{ RELEASE_ARTIFACTID }}-${{ RELEASE_VERSION }}-shaded.jar
+          asset_name: ${{ RELEASE_ARTIFACTID }}-${{ RELEASE_VERSION }}.jar
+          asset_content_type: application/zip
 
 ```
 
