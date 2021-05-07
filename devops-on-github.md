@@ -1,4 +1,4 @@
-# Devops using maven and mkdocs for documentation
+# CI using maven and mkdocs for documentation
 
 This will setup your github pages, creating automatically releases and publishes packages as soon as you merge into `main` 
 The website will then contain the following assuming the version in your pom is VERSION_IN_POM: 
