@@ -8,6 +8,8 @@ The website will then contain the following assuming the version in your pom is 
 Be aware that this uses the versioning major.minor.build and updates the javadoc and documentation if a major or minor update will happen, as a build version should generally not change the documentation.
 Be aware that even if you just release a build update the javadoc and documentation will be overwritten, allowing minor changes such as correcting words/grammar.
 
+Further on your artifactId needs to be lower case, otherwise the deployment to github packages will not work. 
+
 ## Restricting main 
 
 In your project go to settings->Branches and add a Branch protection rule for your main branch (this will be the release branch)
@@ -289,29 +291,28 @@ jobs:
       - shell: bash
         run: mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout > artifactid.log
       - name: Set env version
+        run: echo "MM_VERSION=$(vat version.log)" >> $GITHUB_ENV
+      - name: Set env version
         run: echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
       - name: Set env name
-        run: echo "RELEASE_ARTIFACTID=$(cat artifactid.log)" >> $GITHUB_ENV  
+        run: echo "RELEASE_ARTIFACTID=$(cat artifactid.log)" >> $GITHUB_ENV
       - name: test
         run: echo ${{ env.RELEASE_VERSION }} ${{ env.RELEASE_ARTIFACTID }}
       - run: pip install mkdocs-material
       - run: pip install mkdocs-macros-plugin
       - run: sed -i "s/\$VERSION/$(cat version.log)/g" mkdocs.yml
-      - run: sed -i "s/\$RELEASE_VERSION/${{ env.RELEASE_VERSION }}/g" mkdocs.yml 
+      - run: sed -i "s/\$RELEASE_VERSION/${{ env.RELEASE_VERSION }}/g" mkdocs.yml
       - run: mkdocs build -d site/$(cat version.log)
       - run: mvn javadoc:javadoc
       - run: sed -i "s/\$VERSION/$(cat version.log)/g" index.html
       - run: cp index.html ./site
-      - name: Deploy
+      - name: Deploy Site
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./site
-          destination_dir: ./
-      - name: Publish package
-        run: mvn --batch-mode deploy
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site/${{ env.MM_VERSION }}
+          destination_dir: ./${{ env.MM_VERSION }}
+      - run: mvn package -Dmaven.test.skip=true
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -319,7 +320,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: v${{ env.RELEASE_VERSION }}
-          release_name: Version ${{ env.RELEASE_VERSION }}
+          release_name: version ${{ env.RELEASE_VERSION }}
           draft: false
           prerelease: false
           body_path: CHANGELOG.md
@@ -329,8 +330,12 @@ jobs:
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
           asset_path: ./target/${{ env.RELEASE_ARTIFACTID }}-${{ env.RELEASE_VERSION }}-shaded.jar
-          asset_name: ${{ env.RELEASE_ARTIFACTID }}-${{ env.RELEASE_VERSION }}.jar
+          asset_name: lpbenchgen-${{ env.RELEASE_VERSION }}.jar
           asset_content_type: application/zip
+      - name: Publish package
+        run: mvn --batch-mode deploy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
 ```
 
